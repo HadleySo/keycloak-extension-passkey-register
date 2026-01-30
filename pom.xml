@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+  xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>com.hadleyso.keycloak</groupId>
+  <artifactId>keycloak-passkey-prompt</artifactId>
+  <packaging>jar</packaging>
+  <version>0.1.0-SNAPSHOT</version>
+
+  <name>Keycloak Passkey Registration Prompt</name>
+  <description>Prompt users to set up Passkeys during sign in</description>
+  <url>https://github.com/HadleySo/keycloak-extension-passkey-register</url>
+
+  <developers>
+    <developer>
+      <name>Hadley So</name>
+      <url>https://www.hadleyso.com/</url>
+    </developer>
+  </developers>
+
+  <properties>
+    <java.version>21</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <main.java.package>com.hadleyso.keycloak.keyprompt</main.java.package>
+    <keycloak.version>26.5.0</keycloak.version>
+    <lombok.version>1.18.38</lombok.version>
+  </properties>
+
+
+  <build>
+    <sourceDirectory>src/main/java</sourceDirectory>
+    <plugins>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <version>3.11.0</version>
+        <configuration>
+          <source>${java.version}</source>
+          <target>${java.version}</target>
+          <compilerArgument>-Xlint:unchecked</compilerArgument>
+          <compilerArgument>-Xlint:deprecation</compilerArgument>
+          <useIncrementalCompilation>false</useIncrementalCompilation>
+          <annotationProcessorPaths>
+            <path>
+              <groupId>org.projectlombok</groupId>
+              <artifactId>lombok</artifactId>
+              <version>${lombok.version}</version>
+            </path>
+          </annotationProcessorPaths>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+  <dependencies>
+    <!-- annotation processing helpers for logging and services -->
+    <dependency>
+      <groupId>org.projectlombok</groupId>
+      <artifactId>lombok</artifactId>
+      <version>${lombok.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <!-- keycloak deps -->
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-server-spi</artifactId>
+      <version>${keycloak.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-server-spi-private</artifactId>
+      <version>${keycloak.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.keycloak</groupId>
+      <artifactId>keycloak-services</artifactId>
+      <version>${keycloak.version}</version>
+      <scope>provided</scope>
+    </dependency>
+  </dependencies>
+
+
+</project>
