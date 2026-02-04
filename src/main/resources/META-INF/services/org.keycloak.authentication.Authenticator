@@ -1,1 +1,2 @@
 com.hadleyso.keycloak.keyprompt.PasskeyPrompt
+com.hadleyso.keycloak.keyprompt.PasskeyReset
