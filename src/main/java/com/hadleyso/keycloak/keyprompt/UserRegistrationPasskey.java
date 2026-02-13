@@ -1,7 +1,9 @@
 package com.hadleyso.keycloak.keyprompt;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.FormAction;
@@ -25,6 +27,17 @@ import jakarta.ws.rs.core.MultivaluedMap;
 
 public class UserRegistrationPasskey implements FormAction, FormActionFactory {
     public static final String PROVIDER_ID = "ext-user-create-passkey-register";
+
+    private static final List<ProviderConfigProperty> properties = new ArrayList<>();
+    static {
+        ProviderConfigProperty enableFallbackPassword = new ProviderConfigProperty();
+        enableFallbackPassword.setName("enableFallbackPassword");
+        enableFallbackPassword.setLabel("Enable password fallback");
+        enableFallbackPassword.setHelpText("If enabled, users can set a password if their devices does not support Passkeys.");
+        enableFallbackPassword.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+
+        properties.add(enableFallbackPassword);
+    }
 
     private static AuthenticationExecutionModel.Requirement[] REQUIREMENT_CHOICES = {
         AuthenticationExecutionModel.Requirement.REQUIRED,
@@ -65,7 +78,7 @@ public class UserRegistrationPasskey implements FormAction, FormActionFactory {
 
     @Override
     public boolean isConfigurable() {
-        return false;
+        return true;
     }
 
     @Override
@@ -85,7 +98,7 @@ public class UserRegistrationPasskey implements FormAction, FormActionFactory {
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return null;
+        return properties;
     }
 
     @Override
@@ -97,12 +110,26 @@ public class UserRegistrationPasskey implements FormAction, FormActionFactory {
     @Override
     public void validate(ValidationContext context) {
 
+        // Check if fallback enabled
+        boolean enableFallbackPassword = false;
+        if (context.getAuthenticatorConfig() != null) {
+            String value = context.getAuthenticatorConfig().getConfig().get("enableFallbackPassword");
+            enableFallbackPassword = Boolean.parseBoolean(value);
+        }
+
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
         List<FormMessage> errors = new ArrayList<>();
         if (Validation.isBlank(formData.getFirst("passkeyCompatibilityCheck"))) {
             errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, "Unable to check if a user-verifying platform authenticator is available. Please check if JavaScript is enabled."));
         } else if (!formData.getFirst("passkeyCompatibilityCheck").equals("yes")) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, "Your device is not compatible. A user-verifying platform authenticator like Touch ID, Face ID, or Windows Hello is required."));
+            if (enableFallbackPassword) {
+                context.getAuthenticationSession().setUserSessionNote("com-hadleyso-ext-user-create-passkey-register-method", "PASSWORD"); 
+            } else {
+                errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, "Your device is not compatible. A user-verifying platform authenticator like Touch ID, Face ID, or Windows Hello is required."));
+            }
+            
+        } else {
+            context.getAuthenticationSession().setUserSessionNote("com-hadleyso-ext-user-create-passkey-register-method", "PASSKEY"); 
         }
 
         if (errors.size() > 0) {
@@ -116,7 +143,13 @@ public class UserRegistrationPasskey implements FormAction, FormActionFactory {
 
     @Override
     public void success(FormContext context) {
-        context.getAuthenticationSession().addRequiredAction("webauthn-register-passwordless");
+        String authMethod = context.getAuthenticationSession().getAuthNote("com-hadleyso-ext-user-create-passkey-register-method");
+        if (authMethod == "PASSWORD") {
+            context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        } else {
+            context.getAuthenticationSession().addRequiredAction("webauthn-register-passwordless");   
+        }
+        
     }
 
     @Override

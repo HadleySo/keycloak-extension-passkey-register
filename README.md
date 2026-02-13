@@ -32,7 +32,13 @@ For browser based flows, as shown above. To encourage users to configure a Passk
 ### Passkey Registration
 Only for forms in a registration flow. Goes after the `Registration User Profile Creation` step. When using this execution, the `Password Validation` step can be removed so the user will not be prompted for a password.  
 
+#### When `Enable password fallback` is false or not set:
+
 After submitting the form, if the device is compatible a user is created with no credentials, and the user is shown a Passkey registration screen that cannot be skipped. If the device is not compatible the registration form returns an error without creating the user.
+
+#### When `Enable password fallback` is true:
+
+After submitting the form, if the device is compatible a user is created with no credentials, and the user is shown a Passkey registration screen that cannot be skipped. If the device is not compatible the user is shown a password set prompt to set a password.
 
 ### Reset Credentials - Passkey Setup and Remove Passwords
 For reset credentials flow, to be used in conjunction with `Choose User` & `Send Reset Email`, or `Username Password Form`. In both cases the execution removes the required action to reset a temporary password, and removes all credentials of type password.
