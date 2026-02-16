@@ -1,10 +1,7 @@
 package com.hadleyso.keycloak.keyprompt;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-
 import org.keycloak.Config.Scope;
 import org.keycloak.authentication.FormAction;
 import org.keycloak.authentication.FormActionFactory;
@@ -21,11 +18,14 @@ import org.keycloak.models.UserModel;
 import org.keycloak.models.credential.WebAuthnCredentialModel;
 import org.keycloak.models.utils.FormMessage;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.services.validation.Validation;
-
 import jakarta.ws.rs.core.MultivaluedMap;
+import lombok.extern.jbosslog.JBossLog;
+import org.jboss.logging.Logger;
 
+@JBossLog
 public class UserRegistrationPasskey implements FormAction, FormActionFactory {
+    private static final Logger logger = Logger.getLogger(UserRegistrationPasskey.class);
+
     public static final String PROVIDER_ID = "ext-user-create-passkey-register";
 
     private static final List<ProviderConfigProperty> properties = new ArrayList<>();
@@ -103,7 +103,15 @@ public class UserRegistrationPasskey implements FormAction, FormActionFactory {
 
     @Override
     public void buildPage(FormContext context, LoginFormsProvider form) {
+
+        // Check if fallback enabled
+        boolean enableFallbackPassword = false;
+        if (context.getAuthenticatorConfig() != null) {
+            String value = context.getAuthenticatorConfig().getConfig().get("enableFallbackPassword");
+            enableFallbackPassword = Boolean.parseBoolean(value);
+        }
         form.setAttribute("passkeyCompatibilityCheckRequired", true);
+        form.setAttribute("enableFallbackPassword", enableFallbackPassword);
 
     }
 
@@ -117,39 +125,72 @@ public class UserRegistrationPasskey implements FormAction, FormActionFactory {
             enableFallbackPassword = Boolean.parseBoolean(value);
         }
 
+        // Get form data
         MultivaluedMap<String, String> formData = context.getHttpRequest().getDecodedFormParameters();
-        List<FormMessage> errors = new ArrayList<>();
-        if (Validation.isBlank(formData.getFirst("passkeyCompatibilityCheck"))) {
-            errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, "Unable to check if a user-verifying platform authenticator is available. Please check if JavaScript is enabled."));
-        } else if (!formData.getFirst("passkeyCompatibilityCheck").equals("yes")) {
-            if (enableFallbackPassword) {
-                context.getAuthenticationSession().setUserSessionNote("com-hadleyso-ext-user-create-passkey-register-method", "PASSWORD"); 
-            } else {
-                errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, "Your device is not compatible. A user-verifying platform authenticator like Touch ID, Face ID, or Windows Hello is required."));
-            }
-            
-        } else {
-            context.getAuthenticationSession().setUserSessionNote("com-hadleyso-ext-user-create-passkey-register-method", "PASSKEY"); 
-        }
+        String compatValue = formData.getFirst("passkeyCompatibilityCheck");
 
-        if (errors.size() > 0) {
+        List<FormMessage> errors = new ArrayList<>();
+
+        // Compatibility check not run
+        if (compatValue == null || compatValue.isBlank()) {
+            context.error(Errors.INVALID_REGISTRATION);
+            errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, "Your device is not compatible. A user-verifying platform authenticator like Touch ID, Face ID, or Windows Hello is required."));
             context.error(Errors.INVALID_REGISTRATION);
             context.validationError(formData, errors);
             return;
-        } else {
-            context.success();
         }
+
+
+        // NOT Compatible
+        boolean passkeyCompatible = "yes".equalsIgnoreCase(compatValue);
+        if (!passkeyCompatible) {
+            logger.info("ext-user-create-passkey-register validate() Not passkey compatible");
+
+            if (enableFallbackPassword) {
+                context.getAuthenticationSession().setAuthNote("com-hadleyso-ext-user-create-passkey-register-method", "PASSWORD"); 
+                context.success();
+            } else {
+                errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, "Your device is not compatible. A user-verifying platform authenticator like Touch ID, Face ID, or Windows Hello is required."));
+                context.error(Errors.INVALID_REGISTRATION);
+                context.validationError(formData, errors);
+            }
+            return;
+        }
+
+
+        // YES Compatible
+        logger.info("ext-user-create-passkey-register validate() YES passkey compatible");
+        boolean opedOut = formData.containsKey("passkeyOptOut") && formData.getFirst("passkeyOptOut").equals("opt-out");
+        logger.info("ext-user-create-passkey-register validate() Opt Out: " + opedOut);
+        logger.info("ext-user-create-passkey-register validate() Password Fall Back: " + enableFallbackPassword);
+
+        if (opedOut) {
+            if (enableFallbackPassword) {
+                // Opt out & fallback enabled
+                context.getAuthenticationSession().setAuthNote("com-hadleyso-ext-user-create-passkey-register-method", "PASSWORD"); 
+                context.success();
+            } else {
+                errors.add(new FormMessage(RegistrationPage.FIELD_USERNAME, "Your device is not compatible. A user-verifying platform authenticator like Touch ID, Face ID, or Windows Hello is required."));
+                context.error(Errors.INVALID_REGISTRATION);
+                context.validationError(formData, errors);
+            }
+            return;
+        }
+
+        context.getAuthenticationSession().setAuthNote("com-hadleyso-ext-user-create-passkey-register-method", "PASSKEY"); 
+        context.success();
+        return;
     }
 
     @Override
     public void success(FormContext context) {
         String authMethod = context.getAuthenticationSession().getAuthNote("com-hadleyso-ext-user-create-passkey-register-method");
-        if (authMethod == "PASSWORD") {
-            context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
-        } else {
+        logger.info("ext-user-create-passkey-register success() Opt Out: " + authMethod);
+        if (authMethod == "PASSKEY") {
             context.getAuthenticationSession().addRequiredAction("webauthn-register-passwordless");   
-        }
-        
+        } else {
+            context.getAuthenticationSession().addRequiredAction(UserModel.RequiredAction.UPDATE_PASSWORD);
+        }  
     }
 
     @Override

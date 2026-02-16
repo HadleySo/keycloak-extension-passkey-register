@@ -56,7 +56,7 @@ Conditional flow to check existing passkey usage is not needed.
 
 ## Configuration
 
-**No configuration** is required.
+**No configuration** is required, but a custom theme is required.
 
 **Re-prompt delay**:  
 Days to wait before asking when user selects 'don't ask again'.
@@ -70,8 +70,12 @@ Enable delay of prompt for multiple days. If enabled the 'No, don't ask' button 
 **Skip if user has Passkey**:  
 Don't prompt if the user has any Passkeys set up, even if a Passkey was not used to authenticate.
 
-
 ## Templates
+
+#### Generic Prompt
+
+The included template in this extension is used when asking users if they would like to set a Passkey, it is not used in the Registration Execution.
+
 The [ftl templates](src/main/resources/theme-resources/templates) can be overridden. This is optional.
 
 `passkey-prompt.ftl` - checks if the client has a user-verifying platform authenticator built into the client.
@@ -80,6 +84,60 @@ The [ftl templates](src/main/resources/theme-resources/templates) can be overrid
     -  `setPasskey` - Enroll Passkey
     - `noAction` - Skip this time
     - `noNever` - Don't ask for 90 (or configured) days
+
+#### Registration Flow - `Passkey Registation` Execution
+
+The registration flow and the execution requires modification of the `register.ftl` 
+theme to include the following:
+
+- Boolean `passkeyCompatibilityCheckRequired`, if client check required 
+- Boolean `enableFallbackPassword`, if user can opt-out
+- Checkbox `passkeyOptOut` if opt-out value selected 
+- Input hidden `passkeyCompatibilityCheck` if device supports User Verifying Platform Authenticator
+
+
+```
+<#if passkeyCompatibilityCheckRequired>
+    <input type="hidden" id="passkeyCompatibilityCheck" name="passkeyCompatibilityCheck" value="no"/>
+
+    <div id="passkeyOptOutWrap" style="display: none;">
+        <div class="...">
+            <div class="...">
+                Use Passkeys
+            </div>
+            <div id="...">
+                Passkeys are more secure than passwords, because they're uniquely generated for every account by your own device and are less vulnerable to phishing.
+                <br><br>
+                Your device is compatible with Passkeys and you will not need a password. Sign in to other devices with login with QR Code.
+            </div>
+        </div>
+
+        <#if enableFallbackPassword>
+            <div class="...">
+                <div class="...">
+                    <input type="checkbox" id="passkeyOptOut" name="passkeyOptOut" class="${properties.kcCheckboxInputClass!}" value="opt-out" />
+                    <label for="passkeyOptOut" >Opt-out of passkeys</label>
+                </div>
+
+            </div>
+        </#if>
+    </div>
+
+    <script>
+        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+            .then((available) => {
+                if (available) {
+                    document.getElementById("passkeyCompatibilityCheck").value = "yes";
+                    document.getElementById("passkeyOptOutWrap").style.display = "block";
+                } 
+            })
+            .catch((err) => {
+                console.log("Unable to isUserVerifyingPlatformAuthenticatorAvailable for passkeyCompatibilityCheck");
+            });
+    </script>
+</#if>
+```
+
 
 #### Messages
 
