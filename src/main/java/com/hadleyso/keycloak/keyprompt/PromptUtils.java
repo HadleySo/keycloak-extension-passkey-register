@@ -3,11 +3,12 @@ package com.hadleyso.keycloak.keyprompt;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.keycloak.authentication.AuthenticationFlowContext;
+import org.keycloak.models.UserModel;
 import org.keycloak.provider.ProviderConfigProperty;
-import org.keycloak.sessions.AuthenticationSessionModel;
-import org.keycloak.utils.StringUtil;
 
 public class PromptUtils {
     public static final String DELAY_PROMPT = "COM-HADLEYSO-KEYCLOAK-KEYPROMPT-DELAY";
@@ -55,13 +56,14 @@ public class PromptUtils {
         configProperties.add(anyPasskeySkip);
     }
 
-    public static boolean promptDelayDisabled(AuthenticationFlowContext context) {
-        AuthenticationSessionModel authSession = context.getAuthenticationSession();
-        String timeout = authSession.getAuthNote(DELAY_PROMPT);
-
-        if (StringUtil.isNotBlank(timeout)) {
-            ZonedDateTime maxTimestamp = ZonedDateTime.parse(timeout);
-            return maxTimestamp.isBefore(ZonedDateTime.now());
+    public static boolean skipPrompt(AuthenticationFlowContext context) {
+        UserModel user = context.getUser();
+        Stream<String> timeoutStream = user.getAttributeStream(DELAY_PROMPT);
+        Optional<String> timeout = timeoutStream.findFirst();
+        
+        if (timeout.isPresent()) {
+            ZonedDateTime maxTimestamp = ZonedDateTime.parse(timeout.get());
+            return maxTimestamp.isAfter(ZonedDateTime.now());
 
         }
 

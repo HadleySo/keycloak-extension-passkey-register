@@ -97,7 +97,7 @@ public class PasskeyPrompt implements Authenticator {
 
 
         // If user opted out        
-        if (PromptUtils.promptDelayDisabled(context)) {
+        if (PromptUtils.skipPrompt(context)) {
             context.success();
             if (logger.isTraceEnabled()) {
                 logger.tracef("User has delay prompt - ", user.getId());
