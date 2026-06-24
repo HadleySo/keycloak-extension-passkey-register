@@ -29,8 +29,17 @@ Users also have the **option to dismiss the prompt** for a configured number of 
 ### Prompt User to Setup Passkey
 For browser based flows, as shown above. To encourage users to configure a Passkey. Buttons are configurable to skip or delay the prompt.
 
+### Precheck Passkey for Registering User
+Only as an execution (not step) in a registration flow. Does not require a user in context. Place it as the first execution to ask a user to use Passkeys, use can deny and will be prompted for password. 
+
+Place `Registration User Profile Creation` in a subflow below.
+
+When using this execution, the `Password Validation` step can be removed so the user will not be prompted for password when Passkey used. 
+
 ### Passkey Registration
 Only for forms in a registration flow. Goes after the `Registration User Profile Creation` step. When using this execution, the `Password Validation` step can be removed so the user will not be prompted for a password.  
+
+Place `Registration User Profile Creation` in the same subflow.
 
 #### When `Enable password fallback` is false or not set:
 

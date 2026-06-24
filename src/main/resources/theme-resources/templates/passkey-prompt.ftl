@@ -48,20 +48,24 @@
         </form>
 
         <script>
-            PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-                .then((available) => {
-                    if (available) {
-                        // Trigger AIA
-                        document.getElementById("com-hadleyso-passkey-register").style.display = "block";
-                    } else {
-                        // Respond ok and continue
+            if (window.PublicKeyCredential) {
+                PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+                    .then((available) => {
+                        if (available) {
+                            // Trigger AIA
+                            document.getElementById("com-hadleyso-passkey-register").style.display = "block";
+                        } else {
+                            // Respond ok and continue
+                            document.getElementById("com-hadleyso-passkey-register-noAction").click();
+                        }
+                    })
+                    .catch((err) => {
+                        // Something went wrong
                         document.getElementById("com-hadleyso-passkey-register-noAction").click();
-                    }
-                })
-                .catch((err) => {
-                    // Something went wrong
-                    document.getElementById("com-hadleyso-passkey-register-noAction").click();
-                });
+                    });
+            } else {
+                document.getElementById("com-hadleyso-passkey-register-noAction").click();
+            }
         </script>
 
     </#if>
