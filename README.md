@@ -17,9 +17,10 @@ Users also have the **option to dismiss the prompt** for a configured number of 
 
 ## Compatibility
 
-|               | **v0.1.x**         |
-|---------------|--------------------|
-| **KC 26.5.x** | :white_check_mark: |
+|               | **v0.1.x**         | **v0.2.x**         |
+|---------------|--------------------|--------------------|
+| **KC 26.5.x** | :white_check_mark: | :white_check_mark: |
+| **KC 26.6.x** | :white_check_mark: | :white_check_mark: |
 
 :white_check_mark: - Compatible  
 :heavy_minus_sign: - Patch only  
