@@ -23,6 +23,7 @@
                 <button type="submit"
                         name="continueAction"
                         value="setPasskey"
+                        id="com-hadleyso-passkey-register-setPasskey"
                         class="${properties.kcButtonClass!} ${properties.kcButtonPrimaryClass!} ${properties.kcButtonLargeClass!}">
                     ${msg("doPromptEnroll")}
                 </button>
@@ -53,6 +54,11 @@
                     .then((available) => {
                         if (available) {
                             // Trigger AIA
+
+                            if (${(requireCompat == "yes")?c}) {
+                                document.getElementById("com-hadleyso-passkey-register-setPasskey").click();
+                            }
+                            
                             document.getElementById("com-hadleyso-passkey-register").style.display = "block";
                         } else {
                             // Respond ok and continue

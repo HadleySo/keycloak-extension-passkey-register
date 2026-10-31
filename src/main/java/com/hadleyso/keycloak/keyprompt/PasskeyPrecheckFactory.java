@@ -1,5 +1,6 @@
 package com.hadleyso.keycloak.keyprompt;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.keycloak.Config.Scope;
@@ -26,7 +27,7 @@ public class PasskeyPrecheckFactory implements AuthenticatorFactory {
 
     @Override
     public Authenticator create(KeycloakSession arg0) {
-        return new PasskeyPrechck();
+        return new PasskeyPrecheck();
     }
 
     @Override
@@ -69,7 +70,19 @@ public class PasskeyPrecheckFactory implements AuthenticatorFactory {
 
     @Override
     public List<ProviderConfigProperty> getConfigProperties() {
-        return null;
+        List<ProviderConfigProperty> configProperties = new ArrayList<>();
+
+        ProviderConfigProperty failIncompatible = new ProviderConfigProperty();
+        failIncompatible.setName("compatibility.require");
+        failIncompatible.setLabel("Fail Incompatible");
+        failIncompatible.setType(ProviderConfigProperty.BOOLEAN_TYPE);
+        failIncompatible.setHelpText(
+                "Fail registration when devices are incompatible.");
+        failIncompatible.setDefaultValue(false);
+        failIncompatible.setRequired(true);
+        configProperties.add(failIncompatible);
+
+        return configProperties;
     }
 
     @Override
