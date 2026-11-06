@@ -55,7 +55,7 @@
                         if (available) {
                             // Trigger AIA
 
-                            if (${(requireCompat == "yes")?c}) {
+                            if (${((requireCompat!"false") == "yes")?c}) {
                                 document.getElementById("com-hadleyso-passkey-register-setPasskey").click();
                             }
                             
